@@ -1,0 +1,367 @@
+---
+title: "Exercises 12 - Multiple Linear and Logistic Regression"
+author: "Sadip Giri"
+date: "INSERT DATE"
+output: html_document
+---
+
+Load in required packages
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(datasets)
+library(dplyr)
+
+
+```
+
+# Exercise 1
+
+The ```CO2``` dataset in the the ```datasets```package contains a number of variables for an experiment looking at the carbon dioxide uptake of plants. In this experiment the carbon dioxide uptake for each plant was tested under different concentrations of CO2. These variables are the plant ID (```Plant```), the origin of the plant (```Type```), whether or not the plant was chilled (```Treatment```), the ambient carbon dioxide concentration (```mL/L```), and the carbon dioxide ```uptake``` rates (of carr)umol/m^2sec). 
+
+Bulid a full multiple linear regression model to model the ```uptake``` as a function of the other variables. 
+
+```{r}
+?CO2
+head(CO2)
+
+# here "uptake" is dependent variable and others are considered independent variables
+
+fit1 <- lm(data = CO2, uptake ~ Plant + Type + Treatment + conc)
+
+summary(fit1)
+
+# General model
+# y = mx + c
+# dependent_variable =  slope*independent_variable + y-intercept
+# here:
+#uptake <- coefficient_of_plant*Plant + coefficient_of_type*Type + coefficient_of_treatment*Treatment + coefficient_of_conc*conc + y-intercept
+
+```
+
+Work through the backward ellimination strategy to produce a model in which you are satisfied that all of the remaining variables are important for the model.
+
+```{r}
+# Plant could be eliminated since it's not that much significant
+fit3 <- lm(data = CO2, uptake ~ Type + Treatment + conc)
+
+summary(fit3)
+
+```
+
+
+Create graphis to check the multiple linear model assumptions. Explain what each graphic is checking for and what your conclusions are.
+```{r}
+# # uptake and conc
+# ggplot(data = CO2, mapping = aes(x = conc, y = uptake)) + 
+#         geom_point() + 
+#         labs(x = "Ambient carbon dioxide concentrations (mL/L)", y = "Carbon dioxide uptake rates (umol/m^2 sec)")
+# 
+# cor(CO2$conc, CO2$uptake)
+# 
+# # There is a positive strength of the association between the carbondioxide uptake rates (umol/m^2 sec) and ambient carbon dioxide concentrations (mL/L) (R = 0.4851774)
+# 
+# # uptake and Plant
+# ggplot(data = CO2, mapping = aes(x = Plant, y = uptake)) +
+#         geom_boxplot()
+# 
+# # We can see some trend of variability in plant identifier with respect to uptake rate
+
+
+# Checking the assumptions:
+# 1. Residuals are nearly normal
+fit.stdres1 = rstandard(fit3)
+qqnorm(fit.stdres1,
+       ylab = "Standardized Residuals (Sample Quantiles)",
+       xlab = "Normal Scores (Theoretical Quantiles)",
+       main = "Uptake rate of a Tree")
+
+qqline(fit.stdres1)
+# points are roughly on a normal straight line so this condition is satisfied
+
+#2. Variability in residuals is nearly constant
+dataset = data.frame(fit.values = fit3$fitted.values, residuals = fit3$residuals)
+ggplot(data = dataset, mapping = aes(x = fit.values, y = abs(residuals))) +
+        geom_point()
+# The variability in the residuals is constant
+
+#3. Residuals are independent
+dataset1 = data.frame(order = 1:length(fit3$residuals), residuals = fit3$residuals)
+ggplot(data = dataset1, mapping = aes(x = order, y = residuals)) +
+        geom_point()
+# As there's not much of correlation in data points so we can say that residuals are independent
+
+#4. Each Variable is linearly related to the outcome
+
+dataset2 <- data.frame(conc = CO2$conc, residuals = fit3$residuals)
+
+ggplot(data = dataset2, mapping = aes(x = conc, y = residuals)) +
+        geom_point()
+# somewhat linear but not quite sure
+
+```
+
+What does this tell you carbon dioxide uptake in plants? (Write your conclusions for this analysis as you might in a final project report.)
+
+
+This leaves with the model: uptake <- 19.500290 + -12.659524 * TypeMississippi + -6.859524 * Treatmentchilled +  0.017731 * conc_of_tree.
+That is, there is a statistically significant effect of ambient carbon dioxide concentrations, type_Mississippi and treatement_chilled on the CO2 uptake rates (umol/m^2 sec). In particular, the carbon dioxide uptake rates (umol/m^2 sec) of the grass species Echinochloa crusgalli increases by 0.017731 when the ambient carbon dioxide concentrations one mL/L while keeping Type and Treatment factors constant. 
+
+
+
+# Exercise 2
+
+Using the dataset ```trees``` in the package ```datasets```, create a model to estimate the Volume of a tree based on the ```Girth``` and ```Height``` of the tree. 
+
+```{r, message=FALSE, warning=FALSE}
+#Load in required packages.
+library(datasets)
+
+
+
+```
+
+Create plots to help you understand the relationship between ```Girth`` and ```Height``` and ```Volume```. 
+
+```{r}
+# ?trees
+# head(trees)
+
+# visualization
+# at first: see volume with respect to Girth
+ggplot(data = trees, mapping = aes(x = Girth, y = Volume)) +
+        geom_point()
+
+cor(trees$Girth, trees$Volume)
+
+#There is a very strong positive strength of the association between the Volume and the Girth of a tree (R = 0.9671194)
+
+ggplot(data = trees, mapping = aes(x = Height, y = Volume)) +
+        geom_point()
+
+cor(trees$Height, trees$Volume)
+
+#There is a positive strength of the association between the Volume and the Height of a tree (R = 0.5982497)
+
+```
+
+Use the forward selection strategy to build a multiple linear model for the ```Volume``` using this dataset.
+
+```{r}
+fit4 <- lm(data = trees, Volume ~ Height + Girth)
+
+summary(fit4)
+
+
+```
+
+Create graphics that will help you check the assumptions of the multiple linear regression model.
+
+```{r}
+# check the assumptions of Multi-Linear Regression
+# 1. Residuals are nearly normal
+fit.stdres = rstandard(fit4)
+qqnorm(fit.stdres,
+       ylab = "Standardized Residuals (Sample Quantiles)",
+       xlab = "Normal Scores (Theoretical Quantiles)",
+       main = "Volume of a Tree")
+
+qqline(fit.stdres)
+# points are roughly on a normal straight line so this condition is satisfied
+
+#2. Variability in residuals is nearly constant
+dataset = data.frame(fit.values = fit4$fitted.values, residuals = fit4$residuals)
+ggplot(data = dataset, mapping = aes(x = fit.values, y = abs(residuals))) +
+        geom_point()
+# The variability in the residuals is somewhat constant
+
+#3. Residuals are independent
+dataset1 = data.frame(order = 1:length(fit4$residuals), residuals = fit4$residuals)
+ggplot(data = dataset1, mapping = aes(x = order, y = residuals)) +
+        geom_point()
+# As there's not much of correlation in data points so we can say that residuals are independent
+
+#4. Each Variable is linearly related to the outcome
+
+dataset2 <- data.frame(height = trees$Height, girth = trees$Girth, residuals = fit4$residuals)
+
+ggplot(data = dataset2, mapping = aes(x = height, y = residuals)) +
+        geom_point()
+
+# And also:
+ggplot(data = dataset2, mapping = aes(x = girth, y = residuals)) +
+        geom_point()
+
+# somewhat linear but not quite sure
+```
+
+What does this tell you about the relationship between a tree's girth and height and its volume? Write about this result as you would in a project writeup or a academic journal article.
+
+- This tells us that there is a positive correlation between volume and height & volume and girth respectively with multi-linear model :- Volume_of_tree = -57.9877 + 0.3393 * Height_of_tree + 4.7082 * Girth_of_tree of black cherry trees. That is, the volume of a tree increases by 0.3393 cubic feets when height of tree is 1 cubic feet while keeping the girth constant. Similarly, the volume of a tree increases by 4.7082 cubic feets when girth of tree is 1 cubic feet while keeping the height constant.
+
+
+
+# Exercise 3
+
+You want to predict the probability that someone regularly checks the weather based on other attributes about the person. You want to build a model based on the dataset ```weather_check``` in the package ```fivethirtyeight```. In this dataset, (among other things) there is information on whether each respondent typically checks a daily weather report (```ck_weather```), their ```age```, gender (```female```), the combined total income for all members of the household in the last year (```hhold_income```), and the ```region``` of the US within whcih the respondent resides. 
+
+```{r, message=FALSE, warning=FALSE}
+#Load required packages
+library(fivethirtyeight)
+
+?weather_check
+
+head(weather_check)
+
+```
+
+
+Build a model to predict the probability that someone will check the weather regularly based on the available attributes about them.
+```{r}
+cleaned_data <- na.omit(weather_check)
+
+# log_reg <- glm(data = cleaned_data, ck_weather ~ age + female + hhold_income + region, family = "binomial")
+# 
+# summary(log_reg)
+
+
+# Removing hhold_income as it's insignificant
+# log_reg <- glm(data = cleaned_data, ck_weather ~ age + female + region, family = "binomial")
+# 
+# summary(log_reg)
+
+# # and also region
+# log_reg <- glm(data = cleaned_data, ck_weather ~ age + female, family = "binomial")
+
+# summary(log_reg)
+
+# and also age
+log_reg <- glm(data = cleaned_data, ck_weather ~ female, family = "binomial")
+
+summary(log_reg)
+
+# let's get the coefficients
+log_reg$coefficients
+
+# Calculate probability of checking weather if its not female
+exp(log_reg$coefficients[1])/(1 + exp(log_reg$coefficients[1]))
+
+# calculate probability of checking weather if its female
+exp(log_reg$coefficients[2])/(1 + exp(log_reg$coefficients[2]))
+```
+
+Who is most likely to check the weather?
+ - females??(those who are not females) are more likely to check the weather (Pr(>|z|) = 0.0368).
+
+
+
+
+Create some graphs to help show the relationship between the (key important) attributes and whether or not a person checks the weather regularly. 
+
+```{r}
+
+# ggplot(data = cleaned_data, mapping = aes(x = female)) +
+#         geom_bar()
+# 
+# ggplot(data = cleaned_data, mapping = aes(x = ck_weather)) +
+#         geom_bar()
+
+# proportion?
+ggplot(data = cleaned_data, aes(x = female, fill = ck_weather)) + geom_bar(position = "dodge")
+
+```
+
+Conclusion:
+Females are more likely to check the weather. According to the raw data behind the story "Where People Go To Check The Weather", the probability of female checking the weather is 0.2037471. 
+
+
+
+# Exercise 4
+
+What improves the chances that someone is successful at finding a relationship while they are on OkCupid? There is a dataset called ```profiles``` in the package ```okcupiddata```. This dataset is cleaned profile data OkCupid users (type ```?profiles``` into the console and press enter for more information). In this dataset is information about the ```age```, ```body_type```, dietary habits (```diet```), drinking habits (```drinks```), drug usage habits (```drugs```), education level (```education```), ```ethnicity```, ```height```, ```income``` level, number of ```offspring```, sexual ```orientation```, number of ```pets```, religious affitiation (```religion```), ```sex``` (at the time of data collection only the male/female binary was allowed- this has since been changed), smoking habits (```smokes```) and relationship ```status```. 
+
+You are charged with building a model to predict relationship status based on these other factors to determine whether certain types of people are more likely to be on OkCupid once they are married.  
+
+Load the required packages:
+```{r, message=FALSE, warning=FALSE}
+#Load any required package
+library(okcupiddata)
+
+?profiles
+```
+
+Find the options for relationship status:
+```{r}
+head(profiles)
+
+# visualize age
+ggplot(data = profiles, mapping = aes(x = age, fill = status)) +
+        geom_histogram() +
+        xlim(15, 76)
+```
+
+Modify the dataset to create a new indicator variable which is 1 when the status of a person in married and 0 when the person is anything other than married.  
+
+```{r}
+# creating new status variable: assigned 1 to those who are married and 0 to those who are not married.
+
+new_profile_dataset <- profiles %>%
+        mutate(new_status = (status == "married") * 1)
+
+# view
+head(new_profile_dataset)
+
+
+```
+
+Which variables do you think should be included in the model as potential explanitory variables?
+
+There are a lot of possible independent variables to be included in the model. Whereas, I am considering age, height, income, job and sex as the potential explanatory variables in response of relationship status.
+
+
+
+
+
+Create a model for marriage status based on the variables you identified (you can use either the backward-ellimination or the forward-selection strategies).
+
+```{r}
+# Let's tidy up the dataset first 
+cleaned_profile_dataset <- na.omit(new_profile_dataset)
+
+# log.reg2 <- glm(data = cleaned_profile_dataset, new_status ~ age + height + income + job + sex, family = "binomial")
+# 
+# log.reg2 <- glm(data = cleaned_profile_dataset, new_status ~ age + height + income + job, family = "binomial")
+# 
+# log.reg2 <- glm(data = cleaned_profile_dataset, new_status ~ age + height + income, family = "binomial")
+# 
+# log.reg2 <- glm(data = cleaned_profile_dataset, new_status ~ age + height, family = "binomial")
+
+
+log.reg2 <- glm(data = cleaned_profile_dataset, new_status ~ age, family = "binomial")
+
+summary(log.reg2)
+
+# most of the variables didn't have a significant impact in relationship status except age. Therefore, the model turned out to be:
+```
+
+logit(P_i) <- P_0 + m * P_1
+logit(P_i) <- -5.64014 + 0.02287 * age
+where, P_i is the probability of individual is married
+
+
+Create helpful figures for understanding the relationships in the model.
+
+```{r}
+# proportion
+
+ggplot(data = cleaned_profile_dataset, mapping = aes(x = age, fill = as.character(new_status)))+
+        geom_bar(color = "white", position = "fill")
+
+```
+
+Conclusion:
+A simple logistic regression was calculated to predict relationship status for OkCupid users who were living within 25 miles of San Francisco, had active profiles on June 26, 2012, were online in the previous year, and had at least one picture in their profile based on their age. The predicted probability of marital status is equal to 1/(1 + exp(-(-5.64014 + 0.02287 * age))). This tells us that the probability of relationship status is approximately by 0.003 when the age is one. 
+
+
+
+
+

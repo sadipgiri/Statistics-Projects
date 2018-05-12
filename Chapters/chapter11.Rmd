@@ -1,0 +1,250 @@
+---
+title: "Exercises 11 - Correlation and Linear Regression"
+author: "Sadip Giri"
+date: "INSERT DATE"
+output: html_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+require(dplyr)
+require(ggplot2)
+require(mosaic)
+```
+
+# Exercise 1
+
+The ```road``` dataset in the the ```MASS```package contains a number of variables that could be related to the number of driving related fatalities in each state. These variables are the population density in people per square mile (```popden```), the length of rural roads, in 1000s of miles (```rural```), the average daily maximum temperature in January (```temp```), and the total ```fuel``` consumption in 10,000,000 US gallons per year for the state. 
+
+Which of these variables seem likely to be correlated to the total number of driving deaths in the state?
+```rural``` variable seems likely to be correlated to the total number of driving deaths in the state (```deaths```).
+
+
+
+Choose one of these factors and determine the strength of the correlation between this variable and the number of driving deaths. Do this by both creating a graph to show the relationship, and by finding the correlation coefficient. 
+
+```{r, message=FALSE, warning=FALSE}
+#Load in any required packages
+library(MASS)
+
+# view "road" data set
+head(road)
+
+```
+
+
+
+```{r}
+#Create and graphics and determine the strength of the correlation.
+
+# Visualization 
+
+# The length of rural roads is likely to affect the number of deaths in the state. So, I am considering rural as the independent variable (in X-axis) and number of deaths as dependent variable (in Y-axis).
+ggplot(data = road, mapping = aes(x = rural, y = deaths)) +
+        geom_point() +
+        labs(x = "Length of rural roads in 1000s of miles", y = "Total number of driving deaths in the state")
+
+# Strength of Correlation
+
+cor(road$rural, road$deaths)
+```
+
+What does this tell you about driving-related deaths? i.e., how might you write about this result in a project writeup or a academic journal article?
+
+There is a fairly strong correlation between the length of rural roads and total number of driving deaths in the state (R = 0.5628714).
+
+
+
+
+
+
+# Exercise 2
+
+Using the dataset ```Galton``` in the package ```mosaicData```, determine the strength of the association between the average height of the biological parents of a child and the child when they are fully grown. You should also create a scatterplot of the data. Interpret and explain the results.
+
+```{r, message=FALSE, warning=FALSE}
+#Load in required packages.
+library(mosaicData)
+
+#View "Galton" dataset
+head(Galton)
+
+?Galton
+```
+
+
+Note: you can look at information about the dataset by typing ```?Galton``` into the console and pressing enter. 
+
+
+```{r}
+#Modify the dataset as necesary, create plots, and determine the strength of the association. 
+
+# Modify dataset
+
+# Since, we are dealing with average height of biological parents so need to calculate the average between father and mother for our correlation study
+
+newGalton <- Galton %>%
+        mutate(average_height_parents = (father + mother)/2)
+
+head(newGalton)
+
+# Visualization
+# here, dependent variable will be child's height as an adult(in inches) and independent variable will be average of their biological parents.
+
+ggplot(data = newGalton, mapping = aes(x = average_height_parents, y = height)) +
+        geom_point() +
+        labs(x = "Average height of biological parents", y = "Child's height as an adult")
+
+
+# Strength of correlation
+
+cor(newGalton$average_height_parents, newGalton$height)
+
+```
+
+What does this tell you about the relationship between a child's height and their biological parents height? Write about this result as you would in a project writeup or a academic journal article.
+
+There is a positive strength of the association between the average height of the biological parents of a child and height of the child when they are fully grown (R = 0.3270739).  
+
+
+
+
+
+
+# Exercise 3
+
+You are visiting old faithful and show up to old faithful 5 minutes after the last eruption. The visitors that are still in the area tell you that the last eruption was 4.2 minutes long. You want to predict the length of time to the next eruption using the dataset ```faithful``` in the package ```datasets```. 
+
+```{r, message=FALSE, warning=FALSE}
+#Load required packages
+library(datasets)
+
+# View "faithful" dataset
+head(faithful)
+
+?faithful
+```
+
+
+
+```{r}
+#Do the analysis you need to do and create any relevant figures.
+
+# Visualize relationship
+
+ggplot(data = faithful, mapping = aes(x = eruptions, y = waiting)) +
+        geom_point() +
+        labs(x = "Eruption time in mins", y = "Waiting time to next eruption (in mins)")
+
+
+# Strength of correlation
+cor(faithful$eruptions, faithful$waiting)
+
+```
+
+Predict the waiting time to the next eruption if the last eruption was 4.2 minutes long and was 5 minutes ago:
+```{r}
+# Predict
+# Use Linear Regression
+fit <- lm(waiting~eruptions, data = faithful)
+
+summary(fit)
+
+
+# y = mx + c
+# dependent_variable =  slope*independent_variable + y-intercept
+# here:
+
+#predicted_waiting_time <- 10.7296*eruption_time + 33.4744
+
+# 78.54 minutes is the waiting time to the next eruption if the last eruption was 4.2 minutes long.
+
+```
+
+Conclusion: 
+
+A simple linear regression was calculated to predict waiting time to next eruption (in mins) for the old Faithful geyser in Yellowstone National Park, Wyoming, USA based on the eruption time in mins. A significant regression equation was found (F(1, 270) = ...., p<0.001), with an $r^2$ of 0.81. The predicted waiting time to next eruption is equal to 33.4744 + 10.7296*eruption_time when eruption time is measured in minutes. This tells us that waiting time of eruption is increased by 10.73 according to the given eruption time. We expect the waiting time to next eruption to increase by an average of 44.2 if the eruption time is one minute longer.
+
+```{r}
+
+# Visualization of linear regression predictions/conclusions
+
+ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + geom_point() +
+stat_smooth(method = "lm", col = "red") +
+labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+"Intercept =",signif(fit$coef[[1]],5 ),
+" Slope =",signif(fit$coef[[2]], 5),
+" P =",signif(summary(fit)$coef[2,4], 5)))
+```
+
+
+# Exercise 4
+
+How strongly are the ratings from the site Rotton Tomatoes correlated with user scores for films? To answer this question, we will use the dataset ```fandango``` which is in the package ```fivethirtyeight```. The Rotton Tomatoes score for the film is in variable ```rottentomatoes``` and the user score for the film is ```rottentomatoes_user```. Create a linear model for the user rating as a function of the Rotton Tomatoes rating. If a movie gets a score of 73 from Rotten Tomatoes, what score would you expect a user to give the movie? 
+
+
+```{r, message=FALSE, warning=FALSE}
+#Load any required packages
+library(fivethirtyeight)
+
+# View
+head(fandango)
+
+?fandango
+```
+
+
+
+
+```{r}
+# Create helpful figures and run the appropriate analysis.
+
+# Visualisation
+
+ggplot(data = fandango, mapping = aes(x = rottentomatoes, y = rottentomatoes_user)) +
+        geom_point() +
+        labs(x = "The Rotten Tomatoes Tomatometer score for the film", y = "The Rotten Tomatoes user score for the film")
+
+
+# Strength of correlation
+
+cor(fandango$rottentomatoes, fandango$rottentomatoes_user)
+
+
+# Prediction using simple linear regression model
+
+fit2 <- lm(rottentomatoes_user~rottentomatoes, data = fandango)
+
+# summary of the prediction model
+summary(fit2)
+
+```
+
+If a movie gets a score of 73 from Rotten Tomatoes, what score would you expect a user to give the movie? 
+```{r}
+# y = c + mx
+# dependent_variable = y_intercept + slope*independent_variable
+
+rottentomatoes_score <- 73
+
+expected_user_score <- 32.31553 + 0.51868 * rottentomatoes_score
+
+# If a movie gets a score of 73 from Rotten Tomatoes, we would expect a user to give 70.17917 score to that particular movie 
+
+
+
+```
+
+Conclusion: A simple linear regression was calculated to predict the Rotten Tomatoes user score for the film based on the Rotten Tomatoes Tomatometer score. A significant regression equation was found (F(1, 144) = ...., p<0.001), with an $r^2$ of .81. The predicted user rotten tomatoes score for the film is equal to 32.31553 + 0.51868 * rottentomatoes_score. This tells us that predicted user rotten tomatoes increases by 0.51868 according to the given rottentomatoes score. We expect the user rotten tomatoes score to increase by an average of 32.8 if the rotten tomatoes tomatometer score for the film is one.
+
+```{r}
+
+# Visualization of linear regression predictions/conclusions
+
+ggplot(fit2$model, aes_string(x = names(fit2$model)[2], y = names(fit2$model)[1])) + geom_point() +
+stat_smooth(method = "lm", col = "red") +
+labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+"Intercept =",signif(fit2$coef[[1]],5 ),
+" Slope =",signif(fit2$coef[[2]], 5),
+" P =",signif(summary(fit2)$coef[2,4], 5)))
+```
+

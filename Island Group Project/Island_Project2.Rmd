@@ -1,0 +1,113 @@
+---
+title: "Island_First_test"
+author: "Akash, Kendra & Sadip"
+date: "4/10/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Relationship between classical music and IQ test
+
+Music of all varieties has been shown to generate benefits for the mind and body. For many people, the melody and rhythm of classical music especially provides a perfect atmosphere for relaxation, and it has been suggested as a genre people should listen to more often. There have also been claims that classical music may be beneficial when studying due to the focus it might induce (Kotsopoulou, A., & Hallam, S. 2010). In the following experiment, we investigated a similar claim. Our question was this: is there a causal relationship between listening to classical music and subsequent performance on an IQ test?
+
+To investigate this question, we began by finding our subjects. We took an initial cluster sample by making a list of all the villages on the island and randomly selecting nine of them. Within each of these villages, we randomly selected three communities, and from each community we selected five houses. Then we randomly selected one person from each of these households to take part in the study. 
+
+Each subject was presented with a consent form, which described the fact that the experiment did not involve any overt risk and the data that were collected are kept confidential and safe. In addition, participants could have withdrawn from the experiment at any time and could ask questions during the test. 
+
+Once we had a list of all the subjects, we organized the list alphabetically by name. We categorized half into a control group and the other half into a treatment group by randomly selecting half of the subjects to be in the control group and the remaining half were put into the treatment group. The control group contained individuals who would take an IQ test without having listened to classical music, and the treatment group contained individuals who would take an IQ test directly after listening to classical music.
+
+First, however, we did a round of pre-testing for all subjects. All subjects took an initial IQ test to give us a baseline IQ for each individual.
+
+The next day, at a similar time, there was another round of testing. The control group took an IQ test again. We decided to have the control group take the test again to account for the factor of subjects improving their score as a function of having done the test before. The treatment group was exposed to classical music for 10 minutes before taking the second IQ test. 
+
+# Loading required packages
+```{r, results="hide", warning=FALSE, message=FALSE}
+library(ggplot2)
+library(mosaic)
+library(dplyr)
+library(tidyr)
+```
+
+Reading Csv File
+```{r}
+data <- read.csv("Island Project for Katie's class - Sheet1.csv")
+
+# Viewing our Island data
+head(data)
+
+```
+
+# Tidying up the data
+We then tidied up the data by gathering the two test results into a single column. This is important because it makes plotting and analyzing our results easier.
+
+```{r}
+
+newData <- data %>%
+        gather(Test, Result, first_test_result:second_test_result)
+
+
+head(newData)
+
+
+```
+
+##Let's plot it
+
+The following plots display our data in a variety of ways. The first plot displays the data as a boxplots, which shows the relationships between the testing rounds as well as between the control and treatment groups. Here we see that in both the treatment and control groups IQ scores were higher in the second round, and nearly to the same degree. 
+
+This boxplot helps visualize the lack of difference between the control and treatment group results.
+
+```{r}
+
+ggplot(data = newData, mapping = aes(x = Test, y = Result)) +
+        geom_boxplot() +
+        facet_grid(~Type) + 
+        xlab("First and Second Test Results based on Control and Treatment Groups") + 
+        ylab("IQ Scores")
+```
+
+This scatter plot, displays each test results as a separate point. This allows us to see that most individuals simply maintained their IQ score, while some improved slightly.
+```{r}
+
+ggplot(data = data, mapping = aes(x = first_test_result, y = second_test_result, colour = Type)) +
+         geom_point(alpha = 0.6) #+
+        #geom_smooth()
+
+```
+
+
+# Hypothesis Testing
+In this experiment, our null hypothesis was that there is no relationship between classical music exposure and performance on an IQ test. Our alternative hypothesis was that there is a relationship between classical music exposure and performance on an IQ test.
+
+To gauge whether there is a relationship, we performed a t-test. This involved creating a new variable, which was the difference between the second and first test results of each individual. We then performed the t-test.
+
+```{r}
+
+data <- data %>%
+        mutate(difference_between_two_tests = (second_test_result - first_test_result))
+
+head(data)
+
+t.test(difference_between_two_tests~Type, data = data)
+
+```
+
+# Hypothesis test - Conclusions: 
+We are unable to conclude that there is a relationship between Classical Music Exposure and Performance in IQ testing (P = 0.5185).
+
+#Confidence Interval Interpretation
+
+Our 95% confidence interval ranged from -9.849347 to 5.001829.
+This 95% confidence interval includes 0, so we fail to reject the null hypothesis at the $alpha$ = 0.05 confidence level. So we conclude that the data does not provide strong evidence that there is a relationship between classical music exposure and performance on an IQ test.
+
+
+#Conclusion:
+From Visualization and Hypothesis Testing, we conclude that there is not much of a relationship in IQ Scores and Classical Music. This answered our original question, we were surprised by the lack of relationship. Even though there was no relationship there seems to be other relations affecting the data which could be due to Confounding Variables such as Age, Gender, Location and others.
+
+
+## Reference
+
+Kotsopoulou, A., & Hallam, S. (2010). The perceived impact of playing music while studying: age and cultural differences. Educational Studies, 36(4), 431-440.
+
+
